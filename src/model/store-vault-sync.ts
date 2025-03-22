@@ -53,7 +53,7 @@ export class StoreVaultSync {
   private settlingTime = 30000; // fallback settling time
 
   private lastKnownDraftsByPath: Record<string, Draft> = {};
-  private unsubscribeDraftsStore: Unsubscriber;
+  private unsubscribeDraftsStore: Unsubscriber | undefined;
 
   private pathsToIgnoreNextChange: Set<string> = new Set();
 
@@ -64,7 +64,7 @@ export class StoreVaultSync {
   }
 
   destroy(): void {
-    this.unsubscribeDraftsStore();
+    this.unsubscribeDraftsStore?.();
   }
 
   private isSyncEnabled(): boolean {
@@ -110,7 +110,7 @@ export class StoreVaultSync {
         const interval = setInterval(() => {
           if (!sync.syncing) {
             clearInterval(interval);
-            clearTimeout(timeout);  // Clear the timeout when sync completes
+            clearTimeout(timeout); // Clear the timeout when sync completes
             console.log("[Longform] Sync complete.");
             waitingForSync.set(false);
             resolve();
@@ -138,7 +138,7 @@ export class StoreVaultSync {
       return Promise.resolve();
     }
 
-    return new Promise(resolve =>
+    return new Promise((resolve) =>
       setTimeout(resolve, settings.fallbackWaitTime * 1000)
     );
   }
@@ -185,8 +185,9 @@ export class StoreVaultSync {
     );
     draftsStore.set(draftsToWrite);
 
-    const message = `[Longform] Loaded and watching projects. Found ${draftFiles.length
-      } drafts in ${(new Date().getTime() - start) / 1000.0}s.`;
+    const message = `[Longform] Loaded and watching projects. Found ${
+      draftFiles.length
+    } drafts in ${(new Date().getTime() - start) / 1000.0}s.`;
 
     console.log(message);
 
@@ -238,14 +239,12 @@ export class StoreVaultSync {
     const drafts = get(draftsStore);
 
     // check if a new scene has been moved into this folder
-    const scenePath = file.parent.path;
+    const scenePath = file.parent?.path;
     const memberOfDraft = drafts.find((d) => {
       if (d.format !== "scenes") {
         return false;
       }
-      const parentPath = this.vault.getAbstractFileByPath(d.vaultPath).parent
-        .path;
-      const targetPath = normalizePath(`${parentPath}/${d.sceneFolder}`);
+      const targetPath = sceneFolderPath(d, this.vault);
       return (
         // file is in the scene folder
         targetPath === scenePath &&
@@ -355,7 +354,7 @@ export class StoreVaultSync {
 
       // in-place
       const oldParent = oldPath.split("/").slice(0, -1).join("/");
-      if (foundOld && oldParent === file.parent.path) {
+      if (foundOld && oldParent === file.parent?.path) {
         draftsStore.update((_drafts) => {
           return _drafts.map((d) => {
             if (
@@ -395,7 +394,7 @@ export class StoreVaultSync {
         const newDraft = drafts.find((d) => {
           return (
             d.format === "scenes" &&
-            sceneFolderPath(d, this.vault) === file.parent.path
+            sceneFolderPath(d, this.vault) === file.parent?.path
           );
         });
         if (newDraft) {
@@ -489,8 +488,15 @@ export class StoreVaultSync {
       const sceneFolder = longformEntry["sceneFolder"] ?? "/";
       const sceneTemplate = longformEntry["sceneTemplate"] ?? null;
       const ignoredFiles: string[] = longformEntry["ignoredFiles"] ?? [];
+      if (!fileWithMetadata.file.parent) {
+        console.warn(
+          `[Longform] ${fileWithMetadata.file.path} has no parent folder`
+        );
+      }
+      const parentPath = fileWithMetadata.file.parent?.path ?? "";
+
       const normalizedSceneFolder = normalizePath(
-        `${fileWithMetadata.file.parent.path}/${sceneFolder}`
+        `${parentPath}/${sceneFolder}`
       );
 
       let filenamesInSceneFolder: string[] = [];
@@ -518,7 +524,9 @@ export class StoreVaultSync {
       );
 
       // ignore all new scenes that are known-to-ignore per ignoredFiles
-      const ignoredRegexes = ignoredFiles.filter(n => n).map((p) => ignoredPatternToRegex(p));
+      const ignoredRegexes = ignoredFiles
+        .filter((n) => n)
+        .map((p) => ignoredPatternToRegex(p));
       const unknownFiles = newScenes.filter(
         (s) => ignoredRegexes.find((r) => r.test(s)) === undefined
       );

@@ -25,12 +25,14 @@ export async function createNoteWithPotentialTemplate(
     let contents = "";
     let pluginUsed = "";
     try {
-      if (isTemplaterEnabled(app)) {
+      const templater = templaterPlugin(app);
+      const templates = templatesPlugin(app);
+      if (templater) {
         pluginUsed = "Templater";
-        contents = await createWithTemplater(app, file, template);
-      } else if (isTemplatesEnabled(app)) {
+        contents = await createWithTemplater(app, templater, file, template);
+      } else if (templates) {
         pluginUsed = "Core Templates";
-        contents = await createWithTemplates(app, template);
+        contents = await createWithTemplates(app, templates, template);
       }
     } catch (error) {
       console.error(`[Longform] Error using plugin [${pluginUsed}]:`, error);
@@ -76,26 +78,20 @@ export async function createNote(
   }
 }
 
-function isTemplaterEnabled(app: App): boolean {
-  return !!(app as any).plugins.getPlugin("templater-obsidian");
+function templaterPlugin(app: App): null | object {
+  return (app as any).plugins.getPlugin("templater-obsidian") ?? null;
 }
 
-function isTemplatesEnabled(app: App): boolean {
-  return !!(app as any).internalPlugins.getEnabledPluginById("templates");
+function templatesPlugin(app: App): null | object {
+  return (app as any).internalPlugins.getEnabledPluginById("templates") ?? null;
 }
 
 async function createWithTemplater(
   app: App,
+  templaterPlugin: any,
   file: TFile,
   templatePath: string
 ): Promise<string> {
-  const templaterPlugin = (app as any).plugins.getPlugin("templater-obsidian");
-  if (!templaterPlugin) {
-    console.error(
-      "[Longform] Attempted to use Templater plugin while disabled."
-    );
-    return;
-  }
   const template = app.vault.getAbstractFileByPath(templatePath);
 
   const runningConfig = templaterPlugin.templater.create_running_config(
@@ -108,17 +104,9 @@ async function createWithTemplater(
 
 async function createWithTemplates(
   app: App,
+  corePlugin: any,
   templatePath: string
 ): Promise<string> {
-  const corePlugin = (app as any).internalPlugins.getEnabledPluginById(
-    "templates"
-  );
-  if (!corePlugin) {
-    console.error(
-      "[Longform] Attempted to use core template plugin while disabled."
-    );
-    return;
-  }
   // Get template body
   let contents = await app.vault.adapter.read(templatePath);
 

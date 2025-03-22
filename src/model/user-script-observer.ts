@@ -18,7 +18,7 @@ const DEBOUNCE_SCRIPT_LOAD_DELAY_MS = 10_000;
 export class UserScriptObserver {
   private vault: Vault;
   userScriptFolder: string | null;
-  private unsubscribeScriptFolder: Unsubscriber;
+  private unsubscribeScriptFolder: Unsubscriber | undefined;
   private initializedSteps = false;
   private onScriptModify: any;
 
@@ -34,7 +34,7 @@ export class UserScriptObserver {
   }
 
   destroy(): void {
-    this.unsubscribeScriptFolder();
+    this.unsubscribeScriptFolder?.();
   }
 
   beginObserving(): void {
@@ -68,7 +68,7 @@ export class UserScriptObserver {
     });
   }
 
-  async loadUserSteps(): Promise<CompileStep[]> {
+  async loadUserSteps() {
     if (!this.userScriptFolder) {
       return;
     }
@@ -139,8 +139,6 @@ export class UserScriptObserver {
       };
     });
     workflows.set(mergedWorkflows);
-
-    return userSteps;
   }
 
   private async loadScript(path: string): Promise<CompileStep> {

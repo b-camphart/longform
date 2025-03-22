@@ -1,11 +1,12 @@
 import { derived, writable } from "svelte/store";
 import { groupBy, sortBy } from "lodash";
 
-import type {
-  WordCountSession,
-  Draft,
-  LongformPluginSettings,
-  DraftWordCounts,
+import {
+  type WordCountSession,
+  type Draft,
+  type LongformPluginSettings,
+  type DraftWordCounts,
+  DEFAULT_SETTINGS,
 } from "./types";
 import type {
   Workflow,
@@ -23,7 +24,7 @@ export const initialized = writable<boolean>(false);
 /**
  * Writeable store of plugin settings, serialized as json to the plugin's data.json file.
  */
-export const pluginSettings = writable<LongformPluginSettings>(null);
+export const pluginSettings = writable<LongformPluginSettings>(DEFAULT_SETTINGS);
 
 /**
  * Writeable store of all discovered drafts. Not coalesced into projects.

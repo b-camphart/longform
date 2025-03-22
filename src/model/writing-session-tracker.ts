@@ -13,7 +13,7 @@ import {
   type Vault,
 } from "obsidian";
 import { get, type Unsubscriber } from "svelte/store";
-import { draftForPath, scenePath } from "./scene-navigation";
+import { draftForPath, sceneFolderPath, scenePathForFolder } from "./scene-navigation";
 import { activeFileWordCountStatus } from "src/view/stores";
 import { cloneDeep } from "lodash";
 
@@ -175,8 +175,10 @@ export class WritingSessionTracker {
       return await countForPath(draft.vaultPath);
     } else {
       const sceneCounts: Record<string, number> = {};
+      const sceneFolder = sceneFolderPath(draft, this.vault);
+      if (sceneFolder === null) return sceneCounts;
       for (const scene of draft.scenes) {
-        const path = scenePath(scene.title, draft, this.vault);
+        const path = scenePathForFolder(scene.title, sceneFolder);
         sceneCounts[scene.title] = await countForPath(path);
       }
       return sceneCounts;

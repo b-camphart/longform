@@ -7,7 +7,7 @@
     "types": ["node", "svelte"],
     "sourceMap": true,
     "module": "ESNext",
-    "target": "es6",
+    "target": "es2023",
     "allowJs": true,
     "strict": true,
     "noImplicitAny": true,

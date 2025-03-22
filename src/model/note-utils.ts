@@ -4,7 +4,9 @@ import type { App, TFile } from "obsidian";
 import type { Draft, DraftWordCounts } from "./types";
 
 export function fileNameFromPath(path: string): string {
-  return last(path.split("/")).split(".md")[0];
+  // only time last returns undefined is when the provided array is empty, but
+  // split always returns an array of at least one string
+  return last(path.split("/"))!.split(".md")[0];
 }
 
 /**

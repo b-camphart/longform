@@ -52,6 +52,12 @@ export async function migrate(settings: LongformPluginSettings, app: App) {
         const workflow = metadata.frontmatter["workflow"] ?? null;
         const drafts = metadata.frontmatter["drafts"] ?? [];
         const title = last(projectPath.split("/"));
+        if (title === undefined || title === "") {
+          console.log(
+            `[Longform] project has no title; skipping migration of ${projectPath}`,
+          );
+          continue;
+        }
 
         const moveScenes = async (from: string, to: string) => {
           const { files } = await app.vault.adapter.list(from);

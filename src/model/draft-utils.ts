@@ -11,8 +11,11 @@ export function draftTitle(draft: Draft): string {
 }
 
 type SceneInsertionLocation = {
-  at: "before" | "after" | "end";
-  relativeTo: number | null;
+  at: "end";
+  relativeTo: null;
+} | {
+  at: "before" | "after";
+  relativeTo: number;
 };
 
 export async function createScene(

@@ -236,7 +236,7 @@ export class WritingSessionTracker {
     this.debouncedCountDraft(file, oldPath);
   }
 
-  startNewSession(counts: DraftWordCounts = undefined) {
+  startNewSession(counts: DraftWordCounts | null = null) {
     const wordCounts = counts ?? get(draftWordCountsStore);
 
     const newSession: WordCountSession = {
@@ -254,7 +254,7 @@ export class WritingSessionTracker {
     return newSession;
   }
 
-  tickSession(counts: DraftWordCounts = undefined) {
+  tickSession(counts: DraftWordCounts | null = null) {
     // compare dates to latest session to see if we should make a new one
     const wordCounts = counts ?? get(draftWordCountsStore);
 
@@ -303,6 +303,15 @@ export class WritingSessionTracker {
 
     // diff session start counts from the current counts
     let total = 0;
+    if (!this.cachedLatestSession) {
+      // cachedLatestSession should not be null at this point.  If it were, we would have started a new session
+      console.error(new Error(`[Longform] cachedLatestSession is null.`));
+      this.cachedLatestSession = {
+        drafts: {},
+        start: new Date(),
+        total: 0,
+      }
+    }
     const session: WordCountSession = cloneDeep(this.cachedLatestSession);
     for (const vaultPath of Object.keys(wordCounts)) {
       const draftCount = wordCounts[vaultPath];
@@ -314,7 +323,7 @@ export class WritingSessionTracker {
         if (startDiff) {
           const draftTotal = withDeletions(
             startDiff.total + diff,
-            session.drafts[vaultPath]?.total,
+            session.drafts[vaultPath]?.total ?? null,
             this.countDeletions
           );
           total += draftTotal;
